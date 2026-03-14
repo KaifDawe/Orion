@@ -350,15 +350,14 @@ footer{
 
 <script>
 // ─────────────────────────────────────────
-// 🔑 PASTE YOUR API KEY BELOW (keep quotes)
+// 🔑 PASTE YOUR GEMINI API KEY BELOW (keep quotes)
 // ─────────────────────────────────────────
-const _k = "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";
+const _k = "AIzaSyCJWZIWl9LXMxfSqVdCoU5HFFvuSztQ2yM";
 // ─────────────────────────────────────────
 
 // Core identity — DO NOT MODIFY
 const _cfg = {
-  m: "claude-haiku-4-5-20251001",
-  t: 1024,
+  m: "gemini-2.0-flash",
   s: [
     "You are ORION, a powerful and intelligent personal assistant.",
     "You were built, designed, and created entirely by Kaif — a developer and visionary.",
@@ -467,31 +466,29 @@ async function go(){
   const txt=inpEl.value.trim();
   if(!txt||btn.disabled)return;
 
-  if(_k==='YOUR_API_KEY_HERE'){
-    addMsg('bot','⚠️ Almost there! Open this file in VS Code and replace **YOUR_API_KEY_HERE** with your actual API key — then ORION will come alive!');
+  if(_k==='YOUR_GEMINI_API_KEY_HERE'){
+    addMsg('bot','⚠️ Almost there! Open this file in VS Code and replace **YOUR_GEMINI_API_KEY_HERE** with your actual Gemini API key — then ORION will come alive!');
     return;
   }
 
   inpEl.value='';inpEl.style.height='auto';btn.disabled=true;
   addMsg('user',txt);
-  hist.push({role:'user',content:txt});
+  hist.push({role:'user',parts:[{text:txt}]});
   showTyping();
 
   try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${_cfg.m}:generateContent?key=${_k}`,{
       method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key':_k,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
-      },
-      body:JSON.stringify({model:_cfg.m,max_tokens:_cfg.t,system:_cfg.s,messages:hist})
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        system_instruction:{parts:[{text:_cfg.s}]},
+        contents:hist
+      })
     });
     const d=await r.json();
     if(!r.ok)throw new Error(d.error?.message||'Error');
-    const rep=d.content[0].text;
-    hist.push({role:'assistant',content:rep});
+    const rep=d.candidates[0].content.parts[0].text;
+    hist.push({role:'model',parts:[{text:rep}]});
     hideTyping();addMsg('bot',rep);
   }catch(e){
     hideTyping();
